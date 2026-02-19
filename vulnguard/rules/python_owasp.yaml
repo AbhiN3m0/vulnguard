@@ -1,0 +1,52 @@
+rules:
+
+- id: PY-SQL-001
+  name: SQL Injection via string concatenation
+  description: SQL built using string concatenation
+  pattern: "SELECT .*\\+"
+  severity: HIGH
+  owasp: "A03:2021 Injection"
+  recommendation: "Use parameterized queries instead of string concatenation."
+  language: python
+  schema_version: "1.0"
+
+- id: PY-EVAL-001
+  name: Dangerous eval usage
+  description: Use of eval()
+  pattern: "eval\\("
+  severity: HIGH
+  owasp: "A03:2021 Injection"
+  recommendation: "Avoid eval()."
+  language: python
+  schema_version: "1.0"
+
+- id: PY-EXEC-001
+  name: Dangerous exec usage
+  description: Use of exec()
+  pattern: "exec\\("
+  severity: HIGH
+  owasp: "A03:2021 Injection"
+  recommendation: "Avoid exec()."
+  language: python
+  schema_version: "1.0"
+
+- id: PY-OS-001
+  name: Command Injection risk
+  description: os.system usage
+  pattern: "os\\.system\\("
+  severity: HIGH
+  owasp: "A03:2021 Injection"
+  recommendation: "Avoid direct command execution."
+  language: python
+  schema_version: "1.0"
+
+- id: PY-DEBUG-001
+  name: Debug Mode Enabled
+  description: debug=True found
+  pattern: "debug=True"
+  severity: HIGH
+  owasp: "A05:2021 Security Misconfiguration"
+  recommendation: "Disable debug in production."
+  language: python
+  schema_version: "1.0"
+
