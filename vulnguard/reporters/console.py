@@ -1,34 +1,51 @@
 def print_report(findings, total_files):
-    if not findings:
-        print("✅ No vulnerabilities found.")
-        print(f"\nScanned Files: {total_files}")
-        print("Findings: 0")
-        return
-
-    severity_count = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    high = 0
+    medium = 0
+    low = 0
 
     for finding in findings:
-        severity_count[finding["severity"].upper()] += 1
+        severity = finding["severity"].upper()
 
-        print(f"""
-[ {finding['severity']} ] {finding['name']}
-File: {finding['file']}
-Line: {finding['line']}
-OWASP: {finding['owasp']}
+        if severity == "HIGH":
+            high += 1
+        elif severity == "MEDIUM":
+            medium += 1
+        else:
+            low += 1
 
-Code:
-{finding['code']}
+        print(f"\n[ {severity} ] {finding['name']}")
+        print(f"File: {finding['file']}")
+        print(f"Line: {finding['line']}")
+        print(f"OWASP: {finding['owasp']}\n")
 
-Recommendation:
-{finding['recommendation']}
-----------------------------------------------------
-""")
+        print("Code:")
+        print(finding["code"].strip(), "\n")
+
+        print("Recommendation:")
+        print(finding["recommendation"])
+
+        # 🔥 AI Output Section
+        if "ai" in finding:
+            ai = finding["ai"]
+
+            print("\n--- AI Security Analysis ---")
+            print(f"AI Risk Level: {ai.get('risk_level')}")
+            print(f"Exploitable: {ai.get('is_exploitable')}")
+            print(f"Confidence: {ai.get('confidence')}\n")
+
+            print("AI Reasoning:")
+            print(ai.get("reasoning"))
+
+            print("\nAI Secure Fix:")
+            print(ai.get("secure_fix"))
+
+        print("\n" + "-" * 50)
 
     print("\n========== Scan Summary ==========")
     print(f"Scanned Files: {total_files}")
     print(f"Total Findings: {len(findings)}")
-    print(f"HIGH: {severity_count['HIGH']}")
-    print(f"MEDIUM: {severity_count['MEDIUM']}")
-    print(f"LOW: {severity_count['LOW']}")
+    print(f"HIGH: {high}")
+    print(f"MEDIUM: {medium}")
+    print(f"LOW: {low}")
     print("==================================")
 

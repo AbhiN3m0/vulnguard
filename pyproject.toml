@@ -4,9 +4,11 @@ version = "0.3.0"
 description = "OWASP-focused lightweight static security scanner"
 readme = "README.md"
 requires-python = ">=3.8"
+
 dependencies = [
     "typer",
-    "pyyaml"
+    "pyyaml",
+    "openai"
 ]
 
 [project.scripts]
