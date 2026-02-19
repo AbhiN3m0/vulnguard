@@ -3,30 +3,54 @@ from pathlib import Path
 from vulnguard.matcher import match_rule
 
 
-EXCLUDED_DIRS = {"venv", "__pycache__", "site-packages", ".git"}
+EXCLUDED_DIRS = {
+    "venv",
+    "__pycache__",
+    "site-packages",
+    ".git",
+    "node_modules"
+}
+
+EXCLUDED_FILE_PATTERNS = {
+    ".min.js"
+}
+
+SUPPORTED_EXTENSIONS = {
+    "python": "*.py",
+    "javascript": "*.js",
+}
 
 
 def scan_directory(path, rules):
     findings = []
+    scanned_files = set()
 
-    for file in Path(path).rglob("*.py"):
+    for rule in rules:
+        pattern = SUPPORTED_EXTENSIONS.get(rule.language)
 
-        # Skip excluded directories
-        if any(excluded in file.parts for excluded in EXCLUDED_DIRS):
+        if not pattern:
             continue
 
-        try:
-            content = file.read_text(errors="ignore")
-        except Exception:
-            continue
+        for file in Path(path).rglob(pattern):
 
-        for rule in rules:
-            if rule.language == "python":
-                results = match_rule(rule, content)
+            if any(excluded in file.parts for excluded in EXCLUDED_DIRS):
+                continue
 
-                for result in results:
-                    result["file"] = str(file)
-                    findings.append(result)
+            if any(file.name.endswith(pattern) for pattern in EXCLUDED_FILE_PATTERNS):
+                continue
 
-    return findings
+            scanned_files.add(str(file))
+
+            try:
+                content = file.read_text(errors="ignore")
+            except Exception:
+                continue
+
+            results = match_rule(rule, content)
+
+            for result in results:
+                result["file"] = str(file)
+                findings.append(result)
+
+    return findings, len(scanned_files)
 

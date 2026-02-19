@@ -5,8 +5,6 @@ from vulnguard.rule_loader import load_rules
 from vulnguard.scanner import scan_directory
 from vulnguard.reporters.console import print_report
 from vulnguard.reporters.json_report import export_json
-from vulnguard.reporters.sarif_report import export_sarif
-
 
 app = typer.Typer()
 
@@ -18,15 +16,10 @@ def main(
         None,
         help="Filter by severity (LOW, MEDIUM, HIGH)"
     ),
-json_output: bool = typer.Option(
-    False,
-    help="Export results to JSON file"
-),
-sarif_output: bool = typer.Option(
-    False,
-    help="Export results to SARIF file"
-),
-
+    json_output: bool = typer.Option(
+        False,
+        help="Export results to JSON file"
+    ),
 ):
     """
     Scan a directory for security issues.
@@ -38,7 +31,7 @@ sarif_output: bool = typer.Option(
     rules += load_rules(rule_dir / "python_owasp.yaml")
     rules += load_rules(rule_dir / "javascript_owasp.yaml")
 
-    findings, total_files = scan_directory(path, rules)
+    findings = scan_directory(path, rules)
 
     # Apply severity filter if provided
     if severity:
@@ -47,13 +40,10 @@ sarif_output: bool = typer.Option(
             if f["severity"].upper() == severity.upper()
         ]
 
-    print_report(findings, total_files)
+    print_report(findings)
 
     if json_output:
         export_json(findings)
-    if sarif_output:
-        export_sarif(findings)
-
 
 
 if __name__ == "__main__":

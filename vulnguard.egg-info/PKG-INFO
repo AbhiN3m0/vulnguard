@@ -1,3 +1,12 @@
+Metadata-Version: 2.4
+Name: vulnguard
+Version: 0.3.0
+Summary: OWASP-focused lightweight static security scanner
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: typer
+Requires-Dist: pyyaml
+
 # VulnGuard
 
 VulnGuard is a lightweight OWASP-focused static security scanner for Python applications.
