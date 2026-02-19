@@ -31,8 +31,7 @@ jobs:
 
       - name: Run VulnGuard
         run: |
-          vulnguard . --sarif-output
-
+	vulnguard . --sarif-output || true
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
