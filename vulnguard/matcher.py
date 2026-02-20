@@ -1,27 +1,39 @@
-import re
-
 IGNORE_COMMENT = "vulnguard: ignore"
 
 
-def match_rule(rule, file_content):
+def scan_file(file_path, rules):
     findings = []
 
-    for line_number, line in enumerate(file_content.split("\n"), start=1):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
 
-        # Skip ignored lines
-        if IGNORE_COMMENT in line:
-            continue
+        for line_number, line in enumerate(lines, start=1):
 
-        if re.search(rule.pattern, line):
-            findings.append({
-                "rule_id": rule.id,
-                "name": rule.name,
-                "line": line_number,
-                "severity": rule.severity,
-                "owasp": rule.owasp,
-                "recommendation": rule.recommendation,
-                "code": line.strip()
-            })
+            # Skip ignored lines
+            if IGNORE_COMMENT in line:
+                continue
+
+            for rule in rules:
+                if rule.get("language") != "javascript":
+                    continue
+
+                pattern = rule.get("pattern")
+
+                if pattern and pattern in line:
+                    findings.append({
+                        "rule_id": rule.get("id"),
+                        "title": rule.get("message"),
+                        "severity": rule.get("severity"),
+                        "owasp": rule.get("owasp"),
+                        "file": file_path,
+                        "line": line_number,
+                        "code": line.strip(),
+                        "recommendation": rule.get("fix")
+                    })
+
+    except Exception:
+        pass
 
     return findings
 

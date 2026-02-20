@@ -1,18 +1,28 @@
 import yaml
 from pathlib import Path
-from vulnguard.models import Rule, RULE_SCHEMA_VERSION
+
+RULE_SCHEMA_VERSION = 1
 
 
-def load_rules(rule_path: Path):
-    with open(rule_path, "r") as f:
+def load_rules(file_path: Path):
+    with open(file_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    rules = []
-    for item in data["rules"]:
-        if item["schema_version"] != RULE_SCHEMA_VERSION:
-            raise ValueError("Rule schema version mismatch")
+    if not isinstance(data, dict):
+        raise ValueError("Invalid rule file format")
 
-        rules.append(Rule(**item))
+    file_schema_version = data.get("schema_version")
+
+    if file_schema_version != RULE_SCHEMA_VERSION:
+        raise ValueError(
+            f"Rule schema version mismatch. "
+            f"Expected {RULE_SCHEMA_VERSION}, got {file_schema_version}"
+        )
+
+    rules = data.get("rules", [])
+
+    if not isinstance(rules, list):
+        raise ValueError("Rules must be a list")
 
     return rules
 

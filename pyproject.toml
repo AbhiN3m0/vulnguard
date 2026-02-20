@@ -8,8 +8,10 @@ requires-python = ">=3.8"
 dependencies = [
     "typer",
     "pyyaml",
-    "openai"
+    "openai",
+    "ollama"
 ]
+
 
 [project.scripts]
 vulnguard = "vulnguard.cli:app"

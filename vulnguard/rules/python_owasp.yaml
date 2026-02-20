@@ -1,52 +1,73 @@
+schema_version: 1
+
 rules:
 
-- id: PY-SQL-001
-  name: SQL Injection via string concatenation
-  description: SQL built using string concatenation
-  pattern: "SELECT .*\\+"
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Use parameterized queries instead of string concatenation."
-  language: python
-  schema_version: "1.0"
+  # ---------------------------------------------------
+  # Dangerous eval usage
+  # ---------------------------------------------------
+  - id: PY-EVAL-001
+    language: python
+    type: function_call
+    name: eval
+    message: Dangerous eval usage
+    severity: HIGH
+    owasp: A03:2021 Injection
+    taint_required: true
+    argument_index: 0
+    sources:
+      - input
+    sanitizers:
+      - ast.literal_eval
+    fix: Replace eval() with ast.literal_eval() or safe parsing logic.
 
-- id: PY-EVAL-001
-  name: Dangerous eval usage
-  description: Use of eval()
-  pattern: "eval\\("
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid eval()."
-  language: python
-  schema_version: "1.0"
+  # ---------------------------------------------------
+  # SQL Injection (sqlite / generic DB cursor)
+  # ---------------------------------------------------
+  - id: PY-SQLI-001
+    language: python
+    type: function_call
+    name: cursor.execute
+    message: Possible SQL Injection
+    severity: HIGH
+    owasp: A03:2021 Injection
+    taint_required: true
+    argument_index: 0
+    detect_sql_string: true
+    sources:
+      - input
+    sanitizers:
+      - int
+      - float
+      - str
+    fix: Use parameterized queries instead of string concatenation.
 
-- id: PY-EXEC-001
-  name: Dangerous exec usage
-  description: Use of exec()
-  pattern: "exec\\("
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid exec()."
-  language: python
-  schema_version: "1.0"
+  # ---------------------------------------------------
+  # Unsafe Deserialization (pickle)
+  # ---------------------------------------------------
+  - id: PY-DESERIALIZE-001
+    language: python
+    type: function_call
+    name: pickle.loads
+    message: Potential unsafe deserialization
+    severity: HIGH
+    owasp: A08:2021 Software and Data Integrity Failures
+    taint_required: true
+    argument_index: 0
+    sources:
+      - input
+    fix: Avoid loading untrusted pickle data. Use safe formats like JSON.
 
-- id: PY-OS-001
-  name: Command Injection risk
-  description: os.system usage
-  pattern: "os\\.system\\("
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid direct command execution."
-  language: python
-  schema_version: "1.0"
-
-- id: PY-DEBUG-001
-  name: Debug Mode Enabled
-  description: debug=True found
-  pattern: "debug=True"
-  severity: HIGH
-  owasp: "A05:2021 Security Misconfiguration"
-  recommendation: "Disable debug in production."
-  language: python
-  schema_version: "1.0"
+  # ---------------------------------------------------
+  # Weak Hash (MD5)
+  # ---------------------------------------------------
+  - id: PY-CRYPTO-001
+    language: python
+    type: function_call
+    name: hashlib.md5
+    message: Weak cryptographic hash (MD5)
+    severity: MEDIUM
+    owasp: A02:2021 Cryptographic Failures
+    taint_required: false
+    argument_index: 0
+    fix: Use SHA-256 or stronger hashing algorithm.
 

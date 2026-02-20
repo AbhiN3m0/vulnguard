@@ -30,7 +30,7 @@ def main(
     ),
     ai: bool = typer.Option(
         False,
-        help="Enable AI enrichment for findings"
+        help="Enable AI enrichment (local provider)"
     ),
 ):
     """
@@ -52,9 +52,13 @@ def main(
             if f["severity"].upper() == severity.upper()
         ]
 
-    # AI enrichment (ONLY inside main)
+    # AI enrichment (inside function only)
     if ai:
-        findings = enrich_findings(findings, load_code_context)
+        findings = enrich_findings(
+            findings,
+            load_code_context,
+            provider="local"
+        )
 
     print_report(findings, total_files)
 

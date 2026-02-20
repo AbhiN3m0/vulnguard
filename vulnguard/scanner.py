@@ -1,56 +1,49 @@
+import os
 
-from pathlib import Path
-from vulnguard.matcher import match_rule
-
-
-EXCLUDED_DIRS = {
-    "venv",
-    "__pycache__",
-    "site-packages",
-    ".git",
-    "node_modules"
-}
-
-EXCLUDED_FILE_PATTERNS = {
-    ".min.js"
-}
-
-SUPPORTED_EXTENSIONS = {
-    "python": "*.py",
-    "javascript": "*.js",
-}
+IGNORED_DIRS = {"venv", "node_modules", ".git", "__pycache__"}
 
 
 def scan_directory(path, rules):
     findings = []
-    scanned_files = set()
+    scanned_files = 0
 
-    for rule in rules:
-        pattern = SUPPORTED_EXTENSIONS.get(rule.language)
+    for root, dirs, files in os.walk(path):
+        # Remove ignored directories from traversal
+        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
-        if not pattern:
-            continue
+        for file in files:
+            file_path = os.path.join(root, file)
 
-        for file in Path(path).rglob(pattern):
+            # -----------------------------
+            # Python Files
+            # -----------------------------
+            if file.endswith(".py"):
+                scanned_files += 1
+                try:
+                    from vulnguard.ast_python import scan_python_file
+                    relevant_rules = [
+                        r for r in rules if r.get("language") == "python"
+                    ]
+                    file_findings = scan_python_file(file_path, relevant_rules)
+                    findings.extend(file_findings)
+                except Exception as e:
+                    print("PYTHON parse error:", file_path)
+                    print(e)
 
-            if any(excluded in file.parts for excluded in EXCLUDED_DIRS):
-                continue
+            # -----------------------------
+            # JavaScript Files
+            # -----------------------------
+            elif file.endswith(".js"):
+                scanned_files += 1
+                try:
+                    from vulnguard.ast_javascript import scan_javascript_file
+                    relevant_rules = [
+                        r for r in rules if r.get("language") == "javascript"
+                    ]
+                    file_findings = scan_javascript_file(file_path, relevant_rules)
+                    findings.extend(file_findings)
+                except Exception as e:
+                    print("JS parse error:", file_path)
+                    print(e)
 
-            if any(file.name.endswith(pattern) for pattern in EXCLUDED_FILE_PATTERNS):
-                continue
-
-            scanned_files.add(str(file))
-
-            try:
-                content = file.read_text(errors="ignore")
-            except Exception:
-                continue
-
-            results = match_rule(rule, content)
-
-            for result in results:
-                result["file"] = str(file)
-                findings.append(result)
-
-    return findings, len(scanned_files)
-
+    return findings, scanned_files

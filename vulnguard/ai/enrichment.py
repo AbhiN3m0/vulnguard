@@ -1,15 +1,14 @@
-from vulnguard.ai.provider_openai import OpenAIProvider
+from vulnguard.ai.engine import AIEngine
 from vulnguard.ai.prompt_builder import build_prompts
 
 
-def enrich_findings(findings, file_loader):
-    provider = OpenAIProvider()
+def enrich_findings(findings, file_loader, provider="local"):
+    engine = AIEngine(provider=provider)
 
     enriched = []
 
     for finding in findings:
         try:
-            # Extract 10 lines of surrounding context
             code_snippet = file_loader(
                 finding["file"],
                 finding["line"],
@@ -21,7 +20,7 @@ def enrich_findings(findings, file_loader):
                 code_snippet
             )
 
-            ai_result = provider.analyze(system_prompt, user_prompt)
+            ai_result = engine.analyze(system_prompt, user_prompt)
 
             finding["ai"] = ai_result
 

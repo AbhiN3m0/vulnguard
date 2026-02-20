@@ -1,52 +1,24 @@
+schema_version: 1
+
 rules:
 
-- id: JS-EVAL-001
-  name: Dangerous eval usage
-  description: Use of eval()
-  pattern: "eval\\("
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid eval()."
-  language: javascript
-  schema_version: "1.0"
+  - id: JS-EVAL-001
+    name: Dangerous eval usage
+    language: javascript
+    severity: HIGH
+    owasp: A03:2021 Injection
+    recommendation: Avoid eval(); use safe parsing methods.
 
-- id: JS-EXEC-001
-  name: child_process.exec usage
-  description: Possible command injection
-  pattern: "child_process\\.exec"
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Validate input before execution."
-  language: javascript
-  schema_version: "1.0"
+  - id: JS-DOCUMENT-WRITE-002
+    name: document.write usage
+    language: javascript
+    severity: MEDIUM
+    owasp: A03:2021 Injection
+    recommendation: Avoid document.write; use safe DOM APIs.
 
-- id: JS-INNERHTML-001
-  name: innerHTML assignment
-  description: Potential XSS risk
-  pattern: "innerHTML\\s*="
-  severity: HIGH
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid unsafe DOM injection."
-  language: javascript
-  schema_version: "1.0"
-
-- id: JS-DOCWRITE-001
-  name: document.write usage
-  description: Potential XSS risk
-  pattern: "document\\.write"
-  severity: MEDIUM
-  owasp: "A03:2021 Injection"
-  recommendation: "Avoid document.write."
-  language: javascript
-  schema_version: "1.0"
-
-- id: JS-JWT-001
-  name: JWT decode without verify
-  description: jwt.decode without verification
-  pattern: "jwt\\.decode"
-  severity: HIGH
-  owasp: "A07:2021 Identification and Authentication Failures"
-  recommendation: "Ensure JWT signature verification."
-  language: javascript
-  schema_version: "1.0"
-
+  - id: JS-INNERHTML-001
+    name: innerHTML assignment
+    language: javascript
+    severity: HIGH
+    owasp: A03:2021 Injection
+    recommendation: Avoid unsafe DOM injection; use textContent or sanitization.
