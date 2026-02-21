@@ -1,0 +1,34 @@
+{
+  "CWE-78": {
+    "name": "OS Command Injection",
+    "category": "Injection",
+    "owasp": "A03:2021 - Injection",
+    "impact": { "confidentiality": 0.9, "integrity": 0.9, "availability": 0.8 },
+    "exploitability": 0.95,
+    "base_confidence": 0.9
+  },
+  "CWE-89": {
+    "name": "SQL Injection",
+    "category": "Injection",
+    "owasp": "A03:2021 - Injection",
+    "impact": { "confidentiality": 0.95, "integrity": 0.9, "availability": 0.7 },
+    "exploitability": 0.9,
+    "base_confidence": 0.85
+  },
+  "CWE-79": {
+    "name": "Cross-Site Scripting",
+    "category": "Injection",
+    "owasp": "A03:2021 - Injection",
+    "impact": { "confidentiality": 0.7, "integrity": 0.6, "availability": 0.4 },
+    "exploitability": 0.8,
+    "base_confidence": 0.75
+  },
+  "CWE-285": {
+    "name": "Improper Authorization",
+    "category": "Access Control",
+    "owasp": "A01:2021 - Broken Access Control",
+    "impact": { "confidentiality": 0.85, "integrity": 0.85, "availability": 0.6 },
+    "exploitability": 0.75,
+    "base_confidence": 0.7
+  }
+}

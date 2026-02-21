@@ -1,0 +1,14 @@
+{
+  "name": "vulnguard",
+  "version": "1.0.0",
+  "description": "VulnGuard - Static analysis and AI-powered security engine",
+  "type": "commonjs",
+  "main": "js-engine/scanner.js",
+  "scripts": {
+    "scan": "node js-engine/scanner.js"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0"
+  }
+}
