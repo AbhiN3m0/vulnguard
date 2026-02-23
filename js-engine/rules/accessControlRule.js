@@ -1,119 +1,161 @@
-const traverse = require("@babel/traverse").default;
-const BaseRule = require("./baseRule");
+class AccessControlRule {
 
-const ROUTE_METHODS = ["get", "post", "put", "delete"];
-const AUTH_KEYWORDS = [
-  "authenticate",
-  "authorize",
-  "verify",
-  "isadmin",
-  "checkauth",
-  "auth",
-  "jwt"
-];
+  analyze(ast, filePath) {
 
-class AccessControlRule extends BaseRule {
-  constructor() {
-    super("AccessControlRule");
-  }
-
-  analyze(ast, filePath, mode) {
     const findings = [];
-    let globalAuthDetected = false;
 
-    /* ================= FIRST PASS: Detect Global Middleware ================= */
+    if (!ast || !ast.program || !ast.program.body) {
+      return findings;
+    }
 
-    traverse(ast, {
-      CallExpression(path) {
-        if (
-          path.node.callee.type === "MemberExpression" &&
-          path.node.callee.property &&
-          path.node.callee.property.name === "use"
-        ) {
-          const args = path.node.arguments;
+    const expressMethods = ["get", "post", "put", "delete", "patch"];
 
-          const hasAuth = args.some(arg => {
-            if (arg.type === "Identifier") {
-              return AUTH_KEYWORDS.some(keyword =>
-                arg.name.toLowerCase().includes(keyword)
-              );
-            }
-            return false;
-          });
+    let routerNames = new Set();
+    let mountedRouters = {}; // routerName -> basePath
 
-          if (hasAuth) {
-            globalAuthDetected = true;
+    /* ===================================== */
+    /* 1️⃣ Detect Router Declarations         */
+    /* ===================================== */
+
+    ast.program.body.forEach(node => {
+
+      // const router = express.Router()
+      if (
+        node.type === "VariableDeclaration"
+      ) {
+        node.declarations.forEach(decl => {
+          if (
+            decl.init &&
+            decl.init.callee &&
+            decl.init.callee.property &&
+            decl.init.callee.property.name === "Router"
+          ) {
+            routerNames.add(decl.id.name);
           }
+        });
+      }
+    });
+
+    /* ===================================== */
+    /* 2️⃣ Detect app.use("/base", router)   */
+    /* ===================================== */
+
+    ast.program.body.forEach(node => {
+
+      if (
+        node.type === "ExpressionStatement" &&
+        node.expression &&
+        node.expression.callee &&
+        node.expression.callee.property &&
+        node.expression.callee.property.name === "use"
+      ) {
+
+        const args = node.expression.arguments;
+
+        if (args.length === 2 &&
+            args[0].type === "StringLiteral" &&
+            args[1].type === "Identifier"
+        ) {
+          mountedRouters[args[1].name] = args[0].value;
         }
       }
     });
 
-    /* ================= SECOND PASS: Detect Routes ================= */
+    /* ===================================== */
+    /* 3️⃣ Detect Routes (app + router)       */
+    /* ===================================== */
 
-    traverse(ast, {
-      CallExpression(path) {
+    ast.program.body.forEach(node => {
 
-if (
-  path.node.callee.type === "MemberExpression" &&
-  path.node.callee.object &&
-  path.node.callee.object.type === "Identifier" &&
-  ["app", "router"].includes(
-    path.node.callee.object.name
-  ) &&
-  ROUTE_METHODS.includes(
-    path.node.callee.property.name
-  )
-) {
-          const routeMethod =
-            path.node.callee.property.name.toLowerCase();
+      if (
+        node.type === "ExpressionStatement" &&
+        node.expression &&
+        node.expression.callee &&
+        node.expression.callee.property &&
+        expressMethods.includes(node.expression.callee.property.name)
+      ) {
 
-          const args = path.node.arguments;
-          if (args.length < 1) return;
+        const method = node.expression.callee.property.name;
+        const caller = node.expression.callee.object.name;
+        const args = node.expression.arguments;
 
-          /* ===== Extract Route Path ===== */
+        if (!args || args.length < 2) return;
+        if (args[0].type !== "StringLiteral") return;
 
-          let routePath = "";
+        let routePath = args[0].value;
 
-          const routePathNode = args[0];
+        // If route belongs to mounted router → prefix it
+        if (mountedRouters[caller]) {
+          routePath = mountedRouters[caller] + routePath;
+        }
 
-          if (routePathNode.type === "StringLiteral") {
-            routePath = routePathNode.value.toLowerCase();
-          }
+        const handlerNode = args[1];
 
-          /* ===== Extract Inline Middleware ===== */
+        let handlerCode = "";
+        if (handlerNode.body && handlerNode.body.body) {
+          handlerCode = handlerNode.body.body
+            .map(n => JSON.stringify(n))
+            .join(" ");
+        }
 
-          const middlewares = args.slice(1);
+        const isParamRoute = routePath.includes(":");
 
-          const hasInlineAuth = middlewares.some(mw => {
-            if (mw.type === "Identifier") {
-              return AUTH_KEYWORDS.some(keyword =>
-                mw.name.toLowerCase().includes(keyword)
-              );
-            }
+        /* ===================================== */
+        /* Missing Authorization Detection       */
+        /* ===================================== */
 
-            if (
-              mw.type === "CallExpression" &&
-              mw.callee.type === "Identifier"
-            ) {
-              return AUTH_KEYWORDS.some(keyword =>
-                mw.callee.name.toLowerCase().includes(keyword)
-              );
-            }
+        const hasAuthCheck =
+          handlerCode.includes("isAuthenticated") ||
+          handlerCode.includes("isAdmin") ||
+          handlerCode.includes("req.user") ||
+          handlerCode.includes("verify") ||
+          handlerCode.includes("jwt");
 
-            return false;
+        if (!hasAuthCheck) {
+          findings.push({
+            file: filePath,
+            type: "Missing Authorization Check",
+            line: node.loc ? node.loc.start.line : 0,
+            routePath,
+            routeMethod: method
           });
+        }
 
-          /* ===== If no inline auth AND no global auth → flag ===== */
+        /* ===================================== */
+        /* IDOR Detection                        */
+        /* ===================================== */
 
-          if (!hasInlineAuth && !globalAuthDetected) {
-            findings.push({
-              file: filePath,
-              type: "Missing Authorization Check",
-              line: path.node.loc?.start?.line || 0,
-              routePath,
-              routeMethod
-            });
-          }
+        const usesUserInput =
+          handlerCode.includes("req.params") ||
+          handlerCode.includes("req.body") ||
+          handlerCode.includes("req.query");
+
+        const dbAccessPatterns = [
+          "findByPk",
+          "findById",
+          "findOne",
+          "where",
+          "update",
+          "destroy"
+        ];
+
+        const usesDB = dbAccessPatterns.some(pattern =>
+          handlerCode.includes(pattern)
+        );
+
+        const hasOwnershipCheck =
+          handlerCode.includes("req.user.id") ||
+          handlerCode.includes("ownerId") ||
+          handlerCode.includes("=== req.user");
+
+        if (isParamRoute && usesUserInput && usesDB && !hasOwnershipCheck) {
+          findings.push({
+            file: filePath,
+            type: "Insecure Direct Object Reference",
+            line: node.loc ? node.loc.start.line : 0,
+            routePath,
+            routeMethod: method
+          });
         }
       }
     });

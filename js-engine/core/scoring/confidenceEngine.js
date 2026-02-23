@@ -27,7 +27,6 @@ function calculateScore(finding) {
     const path = (finding.routePath || "").toLowerCase();
     const method = (finding.routeMethod || "").toLowerCase();
 
-    // Critical routes
     if (
       path.includes("admin") ||
       path.includes("root") ||
@@ -38,7 +37,6 @@ function calculateScore(finding) {
       confidence = 0.9;
     }
 
-    // High-risk operations
     else if (
       method === "post" ||
       method === "put" ||
@@ -52,7 +50,6 @@ function calculateScore(finding) {
       confidence = 0.8;
     }
 
-    // Medium sensitive routes
     else if (
       path.includes("profile") ||
       path.includes("account") ||
@@ -62,7 +59,6 @@ function calculateScore(finding) {
       confidence = 0.7;
     }
 
-    // Low-risk public endpoints
     else if (
       path.includes("login") ||
       path.includes("signup") ||
@@ -73,7 +69,6 @@ function calculateScore(finding) {
       confidence = 0.6;
     }
 
-    // Static GET routes
     else if (method === "get") {
       severity = "Info";
       confidence = 0.5;
