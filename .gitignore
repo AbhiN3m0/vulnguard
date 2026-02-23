@@ -41,3 +41,26 @@ vulnguard-report.sarif
 .DS_Store
 .vscode/
 .idea/
+
+
+# Node
+node_modules/
+
+# Python venv (since you're using one)
+venv/
+.venv/
+
+# Environment files
+.env
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Scanner output
+output.txt
+
+# Test target project (VERY IMPORTANT)
+juice-shop/
